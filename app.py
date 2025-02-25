@@ -1,6 +1,8 @@
 from flask import Flask, request, jsonify
 import numpy as np
 import tensorflow as tf
+from PIL import Image
+import io
 
 app = Flask(__name__)
 
@@ -11,18 +13,31 @@ model = tf.keras.models.load_model("./handwriting-prediction-ann-model.h5")
 def home():
     return "Flask ANN Model API is running!"
 
-@app.route("/predict", methods=["GET"])
-def predict():
-    try:
-        # Get JSON data from request
-        # data = request.get_json()
-        # features = np.array(data["features"]).reshape(1, -1)  # Ensure proper shape
 
-        # Make prediction
-        prediction = 2
-
-        return jsonify({"prediction": prediction})
     
+@app.route("/predict", methods=["POST"])
+def upload_image():
+    try:
+        # Get the uploaded image
+        if "image" not in request.files:
+            return jsonify({"error": "No image uploaded"}), 400
+        
+        file = request.files["image"]
+        image = Image.open(file)
+        # grey scale
+        image = image.convert("L")
+
+        # Convert image to NumPy array
+        image_array = np.array(image)  # Values will be in range 0-255
+        print(image_array.shape)
+        
+        # Convert NumPy array to list (JSON serializable)
+        image_list = image_array.tolist()
+        pred=model.predict(np.array([image_array]))
+        output=str(np.ceil(np.array(pred).max()))
+        print(type(output))
+        return jsonify({"pred":int(float(output))})
+
     except Exception as e:
         return jsonify({"error": str(e)})
 
