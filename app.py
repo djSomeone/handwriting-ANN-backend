@@ -3,9 +3,10 @@ import numpy as np
 import tensorflow as tf
 from PIL import Image
 import io
+from flask_cors import CORS
 
 app = Flask(__name__)
-
+CORS(app)
 # Load the trained model
 model = tf.keras.models.load_model("./handwriting-prediction-ann-model.h5")
 
@@ -32,9 +33,9 @@ def upload_image():
         print(image_array.shape)
         
         # Convert NumPy array to list (JSON serializable)
-        image_list = image_array.tolist()
+        
         pred=model.predict(np.array([image_array]))
-        output=str(np.ceil(np.array(pred).max()))
+        output=str(pred.argmax())
         print(type(output))
         return jsonify({"pred":int(float(output))})
 
